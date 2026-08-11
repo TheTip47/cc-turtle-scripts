@@ -1,23 +1,25 @@
 -- =========================================================
 -- CC: Tweaked - Exact Route Automated Item Hauler (haul.lua)
 -- Setup:
---   Place Turtle at Base Origin (510, 122) facing forward into tunnel.
---   Behind Turtle: Functional Storage Controller
---   In Front of Turtle: Overflow Storage Chest
--- Exact Route:
---   1. Turn Left (Facing 3)
+--   Place Turtle at Base Origin (510, 122) facing South (0).
+--   Behind Turtle (North / Facing 2): Functional Storage Controller
+--   In Front of Turtle (South / Facing 0): Overflow Storage Chest
+-- Exact Corrected Route Mechanics:
+--   1. Turn Right (Facing 1 / East / +X direction)
 --   2. Move Forward 67 blocks (X: 510 -> 577)
---   3. Move Down 10 blocks (Y: 122 -> 112)
---   4. Turn Right (Facing 0 / Facing Miner Chest)
---   5. Pull items from Miner Chest
---   6. Move Up 10 blocks (Y: 112 -> 122)
---   7. Turn 180 degrees & Move Forward 67 blocks (X: 577 -> 510)
---   8. Turn 180 degrees (Align facing 0 at Base)
---   9. Turn 180 degrees -> Offload to Storage Controller (Behind)
---  10. Turn 180 degrees -> Offload leftovers to Overflow Chest (Front)
+--   3. Move Down 8 blocks (Y: 122 -> 114 [2 blocks higher than Y=112])
+--   4. Turn Left (Facing 0 / South / Facing Miner Chest)
+--   5. Pull items from Miner Chest via suck()
+--   6. Move Up 8 blocks (Y: 114 -> 122)
+--   7. Turn Left (Facing 3 / West / -X direction)
+--   8. Move Forward 67 blocks (X: 577 -> 510)
+--   9. Turn Left (Facing 0 / South / Base Origin Alignment)
+--  10. Turn 180 degrees -> Offload matching items to Storage Controller (Behind)
+--  11. Turn 180 degrees -> Offload leftover items to Overflow Chest (Front)
 -- =========================================================
 
 -- Coordinate & Direction State Tracking
+-- Facing convention: 0 = South (+Z), 1 = East (+X), 2 = North (-Z), 3 = West (-X)
 local pos = { x = 510, y = 122, z = 0, facing = 0 }
 
 -----------------------------------------------------------
@@ -114,21 +116,21 @@ end
 local function runOutbound()
     print("[Outbound] Navigating to Miner Chest...")
     
-    -- Turn Left at start (Facing 3)
-    turnLeft()
+    -- Turn Right at start to face East / +X direction (Facing 1)
+    turnRight()
     
     -- Move forward 67 blocks (X: 510 -> 577)
     for i = 1, 67 do
         moveForward()
     end
     
-    -- Move down 10 blocks (Y: 122 -> 112)
-    for i = 1, 10 do
+    -- Move down 8 blocks (Y: 122 -> 114)
+    for i = 1, 8 do
         moveDown()
     end
     
-    -- Turn Right to face Miner Chest (Facing 0)
-    turnRight()
+    -- Turn Left to face South / Miner Chest (Facing 0)
+    turnLeft()
 end
 
 local function pullFromMinerChest()
@@ -150,33 +152,31 @@ end
 local function runInbound()
     print("[Inbound] Returning to Base Storage...")
     
-    -- Move up 10 blocks (Y: 112 -> 122)
-    for i = 1, 10 do
+    -- Move up 8 blocks (Y: 114 -> 122)
+    for i = 1, 8 do
         moveUp()
     end
     
-    -- Turn 180 degrees to face back towards X=510 (Facing 2)
-    turnRight()
-    turnRight()
+    -- Turn Left to face West / -X direction (Facing 3)
+    turnLeft()
     
-    -- Move forward 67 blocks back to X=510
+    -- Move forward 67 blocks back to X=510 (X: 577 -> 510)
     for i = 1, 67 do
         moveForward()
     end
     
-    -- Turn 180 degrees to realign to original Base facing (Facing 0)
-    turnRight()
-    turnRight()
+    -- Turn Left to realign to original Base facing (Facing 0 / South)
+    turnLeft()
 end
 
 local function offloadAtBase()
     print("[Offloading] Depositing items at Base...")
     
-    -- Turn 180 degrees to face Storage Controller behind turtle (Facing 2)
+    -- Turn 180 degrees to face Storage Controller behind turtle (Facing 2 / North)
     turnRight()
     turnRight()
     
-    -- Attempt offload into Functional Storage Controller
+    -- Offload into Functional Storage Controller
     local remainingItems = false
     for slot = 1, 16 do
         turtle.select(slot)
@@ -188,7 +188,7 @@ local function offloadAtBase()
         end
     end
     
-    -- Turn 180 degrees back to face Overflow Chest in front (Facing 0)
+    -- Turn 180 degrees back to face Overflow Chest in front (Facing 0 / South)
     turnRight()
     turnRight()
     
@@ -210,8 +210,8 @@ end
 -- Main Loop Execution
 -----------------------------------------------------------
 print("========================================")
-print(" Exact Route Automated Hauler Active")
-print(" Base: (510, 122) | Target: (577, 112)")
+print(" Corrected Route Automated Hauler Active")
+print(" Base: (510, 122) | Target: (577, 114)")
 print(" Behind: Storage Controller | Front: Overflow Chest")
 print("========================================")
 
@@ -229,5 +229,7 @@ while true do
     else
         print("[Status] Miner Chest empty. Standing by at Base for 10s...")
         sleep(10)
+    end
+end
     end
 end
