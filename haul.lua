@@ -1,19 +1,19 @@
 -- =========================================================
 -- CC: Tweaked - Exact Route Automated Item Hauler (haul.lua)
 -- Setup:
---   Place Turtle at Base Origin (510, 122) facing South (0).
---   Behind Turtle (North / Facing 2): Functional Storage Controller
---   In Front of Turtle (South / Facing 0): Overflow Storage Chest
--- Route Mechanics:
---   1. Turn Right (Facing 1 / East / +X direction)
+--   Place Turtle at Base Origin (510, 122) facing South.
+--   Behind Turtle (North): Functional Storage Controller
+--   In Front of Turtle (South): Overflow Storage Chest
+-- Exact Corrected Route Mechanics:
+--   1. Turn Left (Facing East / +X direction)
 --   2. Move Forward 67 blocks (X: 510 -> 577)
 --   3. Move Down 8 blocks (Y: 122 -> 114)
---   4. Turn Left (Facing 0 / South / Facing Miner Chest)
+--   4. Turn Right (Facing South / Miner Chest)
 --   5. Pull items from Miner Chest via suck()
 --   6. Move Up 8 blocks (Y: 114 -> 122)
---   7. Turn Left (Facing 3 / West / -X direction)
+--   7. Turn Right (Facing West / -X direction)
 --   8. Move Forward 67 blocks (X: 577 -> 510)
---   9. Turn Left (Facing 0 / South / Base Origin Alignment)
+--   9. Turn Right (Facing South / Base Origin Alignment)
 --  10. Turn 180 degrees -> Offload matching items to Storage Controller (Behind)
 --  11. Turn 180 degrees -> Offload leftover items to Overflow Chest (Front)
 -- =========================================================
@@ -121,17 +121,21 @@ end
 local function runOutbound()
     print("[Outbound] Navigating to Miner Chest...")
     
-    turnRight()
+    -- Turn Left to face East (+X direction)
+    turnLeft()
     
+    -- Move forward 67 blocks (X: 510 -> 577)
     for i = 1, 67 do
         moveForward()
     end
     
+    -- Move down 8 blocks (Y: 122 -> 114)
     for i = 1, 8 do
         moveDown()
     end
     
-    turnLeft()
+    -- Turn Right to face South (Miner Chest)
+    turnRight()
 end
 
 local function pullFromMinerChest()
@@ -153,25 +157,31 @@ end
 local function runInbound()
     print("[Inbound] Returning to Base Storage...")
     
+    -- Move up 8 blocks (Y: 114 -> 122)
     for i = 1, 8 do
         moveUp()
     end
     
-    turnLeft()
+    -- Turn Right to face West (-X direction)
+    turnRight()
     
+    -- Move forward 67 blocks back to X=510
     for i = 1, 67 do
         moveForward()
     end
     
-    turnLeft()
+    -- Turn Right to realign facing South at Base Origin
+    turnRight()
 end
 
 local function offloadAtBase()
     print("[Offloading] Depositing items at Base...")
     
+    -- Turn 180 degrees to face Storage Controller (North)
     turnRight()
     turnRight()
     
+    -- Offload matching items into Storage Controller
     local remainingItems = false
     for slot = 1, 16 do
         turtle.select(slot)
@@ -183,9 +193,11 @@ local function offloadAtBase()
         end
     end
     
+    -- Turn 180 degrees back to face Overflow Chest (South)
     turnRight()
     turnRight()
     
+    -- Offload unhandled leftover items into Overflow Chest
     if remainingItems then
         print("[Overflow] Offloading unhandled items into Overflow Chest...")
         for slot = 1, 16 do
@@ -203,7 +215,7 @@ end
 -- Main Loop Execution
 -----------------------------------------------------------
 print("========================================")
-print(" Corrected Route Automated Hauler Active")
+print(" Exact Route Automated Hauler Active")
 print(" Base: (510, 122) | Target: (577, 114)")
 print(" Behind: Storage Controller | Front: Overflow Chest")
 print("========================================")
