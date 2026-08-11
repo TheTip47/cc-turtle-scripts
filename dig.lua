@@ -1,29 +1,36 @@
 -- =========================================================
--- CC: Tweaked - 16x16 Chunk Miner (dig.lua)
+-- CC: Tweaked - 16x16 Chunk Miner with Telemetry (dig.lua)
 -- Setup: Place Turtle facing into the chunk.
 -- Slot 16: Ender Chest (Optional - for on-the-go dumping)
 -- Rear Chest: Fallback drop-off behind starting position
+-- Wireless Modem: Equipped on side for telemetry
 -- =========================================================
 
 local args = { ... }
 local targetDepth = tonumber(args[1]) or 64
 
+-- Enable Wireless Rednet Modem
+local modem = peripheral.find("modem")
+if modem then
+    rednet.open(peripheral.getName(modem))
+end
+
 -- Coordinate & Direction State
 local pos = { x = 0, y = 0, z = 0, facing = 0 } -- 0: Forward (+z), 1: Right (+x), 2: Back (-z), 3: Left (-x)
 
--- Wireless Rednet Setup
-peripheral.find("modem", rednet.open)
-
-local function sendDashboardUpdate(statusText)
+-----------------------------------------------------------
+-- Telemetry Broadcast Helper
+-----------------------------------------------------------
+local function sendTelemetry(status)
     if rednet.isOpen() then
         local payload = {
-            label = os.getComputerLabel() or ("Turtle #" .. os.getComputerID()),
             id = os.getComputerID(),
+            label = os.getComputerLabel() or ("Turtle #" .. os.getComputerID()),
             x = pos.x,
             y = pos.y,
             z = pos.z,
             fuel = turtle.getFuelLevel(),
-            status = statusText
+            status = status
         }
         rednet.broadcast(payload, "TURTLE_TELEMETRY")
     end
@@ -128,6 +135,7 @@ local function isInventoryFull()
 end
 
 local function dumpInventory()
+    sendTelemetry("Dumping Inventory")
     print("Dumping inventory...")
     
     -- Check if Ender Chest is in slot 16
@@ -135,7 +143,6 @@ local function dumpInventory()
     local item = turtle.getItemDetail()
     
     if item and item.name:find("ender_chest") then
-        -- Mid-run Ender Chest deployment above turtle
         safeDigUp()
         if turtle.placeUp() then
             for i = 1, 15 do
@@ -143,28 +150,23 @@ local function dumpInventory()
                 turtle.dropUp()
             end
             turtle.select(16)
-            safeDigUp() -- Mined back into slot 16
+            safeDigUp()
             turtle.select(1)
         end
     else
         -- Fallback: Return to starting chest at (0,0,0)
         local savedPos = { x = pos.x, y = pos.y, z = pos.z, facing = pos.facing }
         
-        -- Rise back to surface
         while pos.y < 0 do moveUp() end
-        
-        -- Navigate back to (0,0)
         while pos.facing ~= 2 do turnRight() end
         while pos.z > 0 do moveForward() end
         while pos.facing ~= 3 do turnRight() end
         while pos.x > 0 do moveForward() end
         
-        -- Turn to face rear drop-off chest
         while pos.facing ~= 2 do turnRight() end
         for i = 1, 15 do turtle.select(i) turtle.drop() end
         turtle.select(1)
         
-        -- Return to active mining coordinates
         while pos.facing ~= 1 do turnRight() end
         while pos.x < savedPos.x do moveForward() end
         while pos.facing ~= 0 do turnRight() end
@@ -179,17 +181,19 @@ end
 -----------------------------------------------------------
 print("========================================")
 print(string.format(" Starting Chunk Miner (%d layers)", targetDepth))
-print(" Slot 16: Ender Chest (Optional)")
-print(" Rear Chest: Fallback Drop-off")
 print("========================================")
 
+sendTelemetry("Mining Started")
+
 for level = 1, targetDepth do
-    print(string.format("\n[Layer %d/%d] Mining layer at Y offset %d...", level, targetDepth, pos.y - 1))
+    sendTelemetry(string.format("Layer %d/%d", level, targetDepth))
+    print(string.format("\n[Layer %d/%d] Mining layer...", level, targetDepth))
     moveDown()
     
     for row = 1, 16 do
         for col = 1, 15 do
             moveForward()
+            sendTelemetry(string.format("Mining L%d R%d", level, row))
             if isInventoryFull() then dumpInventory() end
         end
         if row < 16 then
@@ -201,8 +205,7 @@ for level = 1, targetDepth do
         end
     end
     
-    -- Corrected Return: End of Row 16 is at (15, 0) facing -z (2).
-    -- Turn right to face -x (3), walk 15 steps back to x=0, turn right to face +z (0).
+    -- Return to starting corner of row
     turnRight()
     for col = 1, 15 do moveForward() end
     turnRight()
@@ -210,6 +213,7 @@ for level = 1, targetDepth do
     dumpInventory()
 end
 
+sendTelemetry("Mining Complete")
 print("\n========================================")
 print(" Chunk mining complete!")
 print("========================================")
