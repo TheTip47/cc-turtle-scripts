@@ -11,6 +11,24 @@ local targetDepth = tonumber(args[1]) or 64
 -- Coordinate & Direction State
 local pos = { x = 0, y = 0, z = 0, facing = 0 } -- 0: Forward (+z), 1: Right (+x), 2: Back (-z), 3: Left (-x)
 
+-- Wireless Rednet Setup
+peripheral.find("modem", rednet.open)
+
+local function sendDashboardUpdate(statusText)
+    if rednet.isOpen() then
+        local payload = {
+            label = os.getComputerLabel() or ("Turtle #" .. os.getComputerID()),
+            id = os.getComputerID(),
+            x = pos.x,
+            y = pos.y,
+            z = pos.z,
+            fuel = turtle.getFuelLevel(),
+            status = statusText
+        }
+        rednet.broadcast(payload, "TURTLE_TELEMETRY")
+    end
+end
+
 -----------------------------------------------------------
 -- Movement & Location Trackers
 -----------------------------------------------------------
