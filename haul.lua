@@ -4,10 +4,10 @@
 --   Place Turtle at Base Origin (510, 122) facing South (0).
 --   Behind Turtle (North / Facing 2): Functional Storage Controller
 --   In Front of Turtle (South / Facing 0): Overflow Storage Chest
--- Exact Corrected Route Mechanics:
+-- Route Mechanics:
 --   1. Turn Right (Facing 1 / East / +X direction)
 --   2. Move Forward 67 blocks (X: 510 -> 577)
---   3. Move Down 8 blocks (Y: 122 -> 114 [2 blocks higher than Y=112])
+--   3. Move Down 8 blocks (Y: 122 -> 114)
 --   4. Turn Left (Facing 0 / South / Facing Miner Chest)
 --   5. Pull items from Miner Chest via suck()
 --   6. Move Up 8 blocks (Y: 114 -> 122)
@@ -82,10 +82,15 @@ local function moveForward()
         turtle.attack()
         sleep(0.4)
     end
-    if pos.facing == 0 then pos.z = pos.z + 1
-    elseif pos.facing == 1 then pos.x = pos.x + 1
-    elseif pos.facing == 2 then pos.z = pos.z - 1
-    elseif pos.facing == 3 then pos.x = pos.x - 1 end
+    if pos.facing == 0 then
+        pos.z = pos.z + 1
+    elseif pos.facing == 1 then
+        pos.x = pos.x + 1
+    elseif pos.facing == 2 then
+        pos.z = pos.z - 1
+    elseif pos.facing == 3 then
+        pos.x = pos.x - 1
+    end
 end
 
 local function moveDown()
@@ -116,20 +121,16 @@ end
 local function runOutbound()
     print("[Outbound] Navigating to Miner Chest...")
     
-    -- Turn Right at start to face East / +X direction (Facing 1)
     turnRight()
     
-    -- Move forward 67 blocks (X: 510 -> 577)
     for i = 1, 67 do
         moveForward()
     end
     
-    -- Move down 8 blocks (Y: 122 -> 114)
     for i = 1, 8 do
         moveDown()
     end
     
-    -- Turn Left to face South / Miner Chest (Facing 0)
     turnLeft()
 end
 
@@ -152,53 +153,45 @@ end
 local function runInbound()
     print("[Inbound] Returning to Base Storage...")
     
-    -- Move up 8 blocks (Y: 114 -> 122)
     for i = 1, 8 do
         moveUp()
     end
     
-    -- Turn Left to face West / -X direction (Facing 3)
     turnLeft()
     
-    -- Move forward 67 blocks back to X=510 (X: 577 -> 510)
     for i = 1, 67 do
         moveForward()
     end
     
-    -- Turn Left to realign to original Base facing (Facing 0 / South)
     turnLeft()
 end
 
 local function offloadAtBase()
     print("[Offloading] Depositing items at Base...")
     
-    -- Turn 180 degrees to face Storage Controller behind turtle (Facing 2 / North)
     turnRight()
     turnRight()
     
-    -- Offload into Functional Storage Controller
     local remainingItems = false
     for slot = 1, 16 do
         turtle.select(slot)
         if turtle.getItemCount(slot) > 0 then
-            turtle.drop() -- Storage Controller accepts matching drawer items
+            turtle.drop()
             if turtle.getItemCount(slot) > 0 then
                 remainingItems = true
             end
         end
     end
     
-    -- Turn 180 degrees back to face Overflow Chest in front (Facing 0 / South)
     turnRight()
     turnRight()
     
-    -- Offload any unhandled or leftover items into Overflow Chest
     if remainingItems then
         print("[Overflow] Offloading unhandled items into Overflow Chest...")
         for slot = 1, 16 do
             turtle.select(slot)
             if turtle.getItemCount(slot) > 0 then
-                turtle.drop() -- Drops into Overflow Chest in front
+                turtle.drop()
             end
         end
     end
@@ -229,7 +222,5 @@ while true do
     else
         print("[Status] Miner Chest empty. Standing by at Base for 10s...")
         sleep(10)
-    end
-end
     end
 end
