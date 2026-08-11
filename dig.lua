@@ -1,13 +1,15 @@
 -- =========================================================
 -- CC: Tweaked - 16x16 Chunk Miner with Telemetry (dig.lua)
 -- Setup: Place Turtle facing into the chunk.
--- Slot 16: Ender Chest (Optional - for on-the-go dumping)
--- Rear Chest: Fallback drop-off behind starting position
+-- Drop-off Chest: Placed directly behind starting position (0,0,0)
 -- Wireless Modem: Equipped on side for telemetry
 -- =========================================================
 
 local args = { ... }
 local targetDepth = tonumber(args[1]) or 64
+
+-- Total deposited item tracker
+local totalItemsMined = 0
 
 -- Enable Wireless Rednet Modem
 local modem = peripheral.find("modem")
@@ -30,6 +32,7 @@ local function sendTelemetry(status)
             y = pos.y,
             z = pos.z,
             fuel = turtle.getFuelLevel(),
+            items = totalItemsMined,
             status = status
         }
         rednet.broadcast(payload, "TURTLE_TELEMETRY")
@@ -51,7 +54,7 @@ end
 
 local function checkFuel()
     if turtle.getFuelLevel() ~= "unlimited" and turtle.getFuelLevel() < 150 then
-        for i = 1, 15 do
+        for i = 1, 16 do
             turtle.select(i)
             if turtle.refuel(0) then
                 turtle.refuel()
@@ -128,7 +131,7 @@ end
 -- Inventory & Chest Management
 -----------------------------------------------------------
 local function isInventoryFull()
-    for i = 1, 15 do
+    for i = 1, 16 do
         if turtle.getItemCount(i) == 0 then return false end
     end
     return true
@@ -136,44 +139,46 @@ end
 
 local function dumpInventory()
     sendTelemetry("Dumping Inventory")
-    print("Dumping inventory...")
+    print("Returning to base chest to dump inventory...")
     
-    -- Check if Ender Chest is in slot 16
-    turtle.select(16)
-    local item = turtle.getItemDetail()
+    -- Save current location state
+    local savedPos = { x = pos.x, y = pos.y, z = pos.z, facing = pos.facing }
     
-    if item and item.name:find("ender_chest") then
-        safeDigUp()
-        if turtle.placeUp() then
-            for i = 1, 15 do
-                turtle.select(i)
-                turtle.dropUp()
-            end
-            turtle.select(16)
-            safeDigUp()
-            turtle.select(1)
+    -- Ascend to surface level
+    while pos.y < 0 do moveUp() end
+    
+    -- Return to Z coordinate origin (0)
+    while pos.facing ~= 2 do turnRight() end
+    while pos.z > 0 do moveForward() end
+    
+    -- Return to X coordinate origin (0)
+    while pos.facing ~= 3 do turnRight() end
+    while pos.x > 0 do moveForward() end
+    
+    -- Face rear chest (-Z direction / facing = 2)
+    while pos.facing ~= 2 do turnRight() end
+    
+    -- Offload inventory slots 1 through 16 into rear chest
+    for i = 1, 16 do
+        turtle.select(i)
+        local initialCount = turtle.getItemCount(i)
+        if initialCount > 0 then
+            turtle.drop()
+            local remainingCount = turtle.getItemCount(i)
+            totalItemsMined = totalItemsMined + (initialCount - remainingCount)
         end
-    else
-        -- Fallback: Return to starting chest at (0,0,0)
-        local savedPos = { x = pos.x, y = pos.y, z = pos.z, facing = pos.facing }
-        
-        while pos.y < 0 do moveUp() end
-        while pos.facing ~= 2 do turnRight() end
-        while pos.z > 0 do moveForward() end
-        while pos.facing ~= 3 do turnRight() end
-        while pos.x > 0 do moveForward() end
-        
-        while pos.facing ~= 2 do turnRight() end
-        for i = 1, 15 do turtle.select(i) turtle.drop() end
-        turtle.select(1)
-        
-        while pos.facing ~= 1 do turnRight() end
-        while pos.x < savedPos.x do moveForward() end
-        while pos.facing ~= 0 do turnRight() end
-        while pos.z < savedPos.z do moveForward() end
-        while pos.y > savedPos.y do moveDown() end
-        while pos.facing ~= savedPos.facing do turnRight() end
     end
+    turtle.select(1)
+    
+    -- Navigate back to saved mining coordinates
+    while pos.facing ~= 1 do turnRight() end
+    while pos.x < savedPos.x do moveForward() end
+    while pos.facing ~= 0 do turnRight() end
+    while pos.z < savedPos.z do moveForward() end
+    while pos.y > savedPos.y do moveDown() end
+    while pos.facing ~= savedPos.facing do turnRight() end
+
+    sendTelemetry("Inventory Dumped")
 end
 
 -----------------------------------------------------------
@@ -216,4 +221,5 @@ end
 sendTelemetry("Mining Complete")
 print("\n========================================")
 print(" Chunk mining complete!")
+print("========================================")
 print("========================================")
