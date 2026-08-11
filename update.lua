@@ -7,6 +7,9 @@ local baseUrl = "https://raw.githubusercontent.com/TheTip47/cc-turtle-scripts/ma
 
 local manifest = {
     "dig.lua",
+    "tunnel.lua",
+    "haul.lua",
+    "sorter.lua",
     "update.lua"
 }
 
