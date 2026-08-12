@@ -9,19 +9,9 @@
 --   Facing 1 = East (+X) [turnLeft from South]
 --   Facing 2 = North (-Z) [turnRight/Left x2]
 --   Facing 3 = West (-X) [turnRight from South]
--- Smart Chest Detection & Route Execution:
---   1. turnLeft()    -> Physical turn left to face East (1 / +X)
---   2. Move 67 blocks forward (X: 510 -> 577)
---   3. Move 9 blocks down (Y: 122 -> 113)
---   4. turnRight()   -> Physical turn right to face South (0 / Miner Chest direction)
---   5. Inspect Front -> If chest is NOT directly adjacent, step forward 1 block.
---   6. Pull items via suck() from Miner Chest
---   7. Step back 1 block if forward step was taken.
---   8. Move 9 blocks up (Y: 113 -> 122)
---   9. turnRight()   -> Physical turn right to face West (3 / -X)
---  10. Move 67 blocks forward (X: 577 -> 510)
---  11. turnLeft()    -> Physical turn left to face South (0 / Realigned at Base)
---  12. Offload to Storage Controller (North) & Overflow Chest (South)
+-- Optimization:
+--   Direct movement execution eliminates pre-step delays (safeDig/checkFuel)
+--   on clear tunnel blocks, executing uninterrupted 1-tick moves.
 -- =========================================================
 
 -- Coordinate & Direction State Tracking
@@ -44,11 +34,16 @@ local function turnLeft()
 end
 
 local function checkFuel()
-    if turtle.getFuelLevel() ~= "unlimited" and turtle.getFuelLevel() < 150 then
+    if turtle.getFuelLevel() ~= "unlimited" and turtle.getFuelLevel() < 100 then
         for i = 1, 16 do
-            turtle.select(i)
-            if turtle.refuel(0) then
-                turtle.refuel()
+            if turtle.getItemCount(i) > 0 then
+                turtle.select(i)
+                if turtle.refuel(0) then
+                    turtle.refuel()
+                    if turtle.getFuelLevel() >= 500 then
+                        break
+                    end
+                end
             end
         end
         turtle.select(1)
@@ -60,7 +55,7 @@ local function safeDig()
     while turtle.detect() and attempts < 10 do
         turtle.dig()
         attempts = attempts + 1
-        sleep(0.3)
+        sleep(0.2)
     end
 end
 
@@ -69,7 +64,7 @@ local function safeDigUp()
     while turtle.detectUp() and attempts < 10 do
         turtle.digUp()
         attempts = attempts + 1
-        sleep(0.3)
+        sleep(0.2)
     end
 end
 
@@ -78,17 +73,19 @@ local function safeDigDown()
     while turtle.detectDown() and attempts < 10 do
         turtle.digDown()
         attempts = attempts + 1
-        sleep(0.3)
+        sleep(0.2)
     end
 end
 
 local function moveForward()
-    checkFuel()
-    safeDig()
-    while not turtle.forward() do
+    if not turtle.forward() then
+        checkFuel()
         safeDig()
-        turtle.attack()
-        sleep(0.4)
+        while not turtle.forward() do
+            safeDig()
+            turtle.attack()
+            sleep(0.2)
+        end
     end
     if pos.facing == 0 then
         pos.z = pos.z + 1
@@ -102,15 +99,17 @@ local function moveForward()
 end
 
 local function moveBack()
-    checkFuel()
-    while not turtle.back() do
-        turnRight()
-        turnRight()
-        safeDig()
-        turtle.attack()
-        turnRight()
-        turnRight()
-        sleep(0.4)
+    if not turtle.back() do
+        checkFuel()
+        while not turtle.back() do
+            turnRight()
+            turnRight()
+            safeDig()
+            turtle.attack()
+            turnRight()
+            turnRight()
+            sleep(0.2)
+        end
     end
     if pos.facing == 0 then
         pos.z = pos.z - 1
@@ -124,23 +123,27 @@ local function moveBack()
 end
 
 local function moveDown()
-    checkFuel()
-    safeDigDown()
-    while not turtle.down() do
+    if not turtle.down() do
+        checkFuel()
         safeDigDown()
-        turtle.attackDown()
-        sleep(0.4)
+        while not turtle.down() do
+            safeDigDown()
+            turtle.attackDown()
+            sleep(0.2)
+        end
     end
     pos.y = pos.y - 1
 end
 
 local function moveUp()
-    checkFuel()
-    safeDigUp()
-    while not turtle.up() do
+    if not turtle.up() do
+        checkFuel()
         safeDigUp()
-        turtle.attackUp()
-        sleep(0.4)
+        while not turtle.up() do
+            safeDigUp()
+            turtle.attackUp()
+            sleep(0.2)
+        end
     end
     pos.y = pos.y + 1
 end
@@ -149,13 +152,11 @@ end
 -- Chest Inspection Helper
 -----------------------------------------------------------
 local function isChestInFront()
-    -- Method 1: Peripheral inventory type check
     local pType = peripheral.getType("front")
     if pType then
         return true
     end
     
-    -- Method 2: Block inspection data check
     local hasBlock, data = turtle.inspect()
     if hasBlock and type(data) == "table" and data.name then
         local name = data.name:lower()
