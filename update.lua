@@ -1,44 +1,36 @@
--- =========================================================
--- CC: Tweaked - Turtle Repository Auto-Updater (update.lua)
--- Repository: TheTip47/cc-turtle-scripts
--- =========================================================
+-- Repository Auto-Updater Manifest for cc-turtle-scripts
+-- Host: TheTip47/cc-turtle-scripts
 
 local baseUrl = "https://raw.githubusercontent.com/TheTip47/cc-turtle-scripts/main/"
 
-local manifest = {
+local files = {
     "dig.lua",
-    "tunnel.lua",
     "haul.lua",
-    "sorter.lua",
     "update.lua"
 }
 
-if not http then
-    error("Error: HTTP API is disabled on this server!")
-end
+print("=== Synchronizing cc-turtle-scripts Repository ===")
 
-print("========================================")
-print(" Checking for Turtle Script Updates...")
-print("========================================")
-
-for _, filename in ipairs(manifest) do
-    local url = baseUrl .. filename
-    print("Fetching: " .. filename .. "...")
+for _, filename in ipairs(files) do
+    local targetUrl = baseUrl .. filename
+    print("Downloading: " .. filename)
     
-    local response = http.get(url)
+    local response = http.get(targetUrl, nil, true)
     if response then
         local content = response.readAll()
         response.close()
         
-        local file = fs.open(filename, "w")
-        file.write(content)
-        file.close()
-        print(" -> Updated successfully.")
+        local file = fs.open(filename, "wb")
+        if file then
+            file.write(content)
+            file.close()
+            print("  [OK] " .. filename .. " updated successfully.")
+        else
+            print("  [ERROR] Could not open " .. filename .. " for writing.")
+        end
     else
-        print(" -> FAILED to download " .. filename)
+        print("  [ERROR] Failed to fetch " .. targetUrl)
     end
 end
 
-print("========================================")
-print(" Update Complete!")
-print("========================================")
+print("=== Repository Update Complete ===")
