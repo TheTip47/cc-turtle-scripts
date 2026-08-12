@@ -99,7 +99,7 @@ local function moveForward()
 end
 
 local function moveBack()
-    if not turtle.back() do
+    if not turtle.back() then
         checkFuel()
         while not turtle.back() do
             turnRight()
