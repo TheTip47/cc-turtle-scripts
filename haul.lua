@@ -1,25 +1,28 @@
 -- =========================================================
 -- CC: Tweaked - Exact Route Automated Item Hauler (haul.lua)
 -- Setup:
---   Place Turtle at Base Origin (510, 122) facing South.
---   Behind Turtle (North): Functional Storage Controller
---   In Front of Turtle (South): Overflow Storage Chest
--- Exact Corrected Route Mechanics:
---   1. Turn Left (Facing East / +X direction)
---   2. Move Forward 67 blocks (X: 510 -> 577)
---   3. Move Down 8 blocks (Y: 122 -> 114)
---   4. Turn Right (Facing South / Miner Chest)
---   5. Pull items from Miner Chest via suck()
---   6. Move Up 8 blocks (Y: 114 -> 122)
---   7. Turn Right (Facing West / -X direction)
---   8. Move Forward 67 blocks (X: 577 -> 510)
---   9. Turn Right (Facing South / Base Origin Alignment)
---  10. Turn 180 degrees -> Offload matching items to Storage Controller (Behind)
---  11. Turn 180 degrees -> Offload leftover items to Overflow Chest (Front)
+--   Place Turtle at Base Origin (510, 122) facing South (Facing 0).
+--   Behind Turtle (North / Facing 2): Functional Storage Controller
+--   In Front of Turtle (South / Facing 0): Overflow Storage Chest
+-- Route Direction Calibration:
+--   - South = Facing 0 (+Z)
+--   - East  = Facing 1 (+X) [turnRight from South]
+--   - North = Facing 2 (-Z) [turnRight x2 from South]
+--   - West  = Facing 3 (-X) [turnLeft from South]
+-- Route Execution Steps:
+--   1. turnRight()  -> Facing 1 (East / +X)
+--   2. Move 67 blocks forward (X: 510 -> 577)
+--   3. Move 8 blocks down (Y: 122 -> 114)
+--   4. turnRight()  -> Facing 0 (South / Miner Chest)
+--   5. Pull items via suck()
+--   6. Move 8 blocks up (Y: 114 -> 122)
+--   7. turnLeft()   -> Facing 3 (West / -X)
+--   8. Move 67 blocks forward (X: 577 -> 510)
+--   9. turnLeft()   -> Facing 0 (South / Base Origin realigned)
+--  10. Offload to Storage Controller (North) & Overflow Chest (South)
 -- =========================================================
 
 -- Coordinate & Direction State Tracking
--- Facing convention: 0 = South (+Z), 1 = East (+X), 2 = North (-Z), 3 = West (-X)
 local pos = { x = 510, y = 122, z = 0, facing = 0 }
 
 -----------------------------------------------------------
@@ -121,8 +124,8 @@ end
 local function runOutbound()
     print("[Outbound] Navigating to Miner Chest...")
     
-    -- Turn Left to face East (+X direction)
-    turnLeft()
+    -- Turn Right from South (0) to East (1 / +X)
+    turnRight()
     
     -- Move forward 67 blocks (X: 510 -> 577)
     for i = 1, 67 do
@@ -134,7 +137,7 @@ local function runOutbound()
         moveDown()
     end
     
-    -- Turn Right to face South (Miner Chest)
+    -- Turn Right from East (1) to South (0 / Miner Chest)
     turnRight()
 end
 
@@ -162,26 +165,26 @@ local function runInbound()
         moveUp()
     end
     
-    -- Turn Right to face West (-X direction)
-    turnRight()
+    -- Turn Left from South (0) to West (3 / -X)
+    turnLeft()
     
-    -- Move forward 67 blocks back to X=510
+    -- Move forward 67 blocks back to X=510 (X: 577 -> 510)
     for i = 1, 67 do
         moveForward()
     end
     
-    -- Turn Right to realign facing South at Base Origin
-    turnRight()
+    -- Turn Left from West (3) to South (0 / Realigned at Base)
+    turnLeft()
 end
 
 local function offloadAtBase()
     print("[Offloading] Depositing items at Base...")
     
-    -- Turn 180 degrees to face Storage Controller (North)
+    -- Turn 180 degrees to face Storage Controller behind turtle (North / 2)
     turnRight()
     turnRight()
     
-    -- Offload matching items into Storage Controller
+    -- Offload into Functional Storage Controller
     local remainingItems = false
     for slot = 1, 16 do
         turtle.select(slot)
@@ -193,7 +196,7 @@ local function offloadAtBase()
         end
     end
     
-    -- Turn 180 degrees back to face Overflow Chest (South)
+    -- Turn 180 degrees back to face Overflow Chest in front (South / 0)
     turnRight()
     turnRight()
     
@@ -215,7 +218,7 @@ end
 -- Main Loop Execution
 -----------------------------------------------------------
 print("========================================")
-print(" Exact Route Automated Hauler Active")
+print(" Corrected Route Automated Hauler Active")
 print(" Base: (510, 122) | Target: (577, 114)")
 print(" Behind: Storage Controller | Front: Overflow Chest")
 print("========================================")
