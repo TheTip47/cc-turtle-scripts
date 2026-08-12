@@ -12,10 +12,10 @@
 -- Route Execution Sequence:
 --   1. turnLeft()   -> Physical turn left to face East (1 / +X)
 --   2. Move 67 blocks forward (X: 510 -> 577)
---   3. Move 8 blocks down (Y: 122 -> 114)
+--   3. Move 9 blocks down (Y: 122 -> 113)
 --   4. turnRight()  -> Physical turn right to face South (0 / Miner Chest)
 --   5. Pull items via suck()
---   6. Move 8 blocks up (Y: 114 -> 122)
+--   6. Move 9 blocks up (Y: 113 -> 122)
 --   7. turnRight()  -> Physical turn right to face West (3 / -X)
 --   8. Move 67 blocks forward (X: 577 -> 510)
 --   9. turnLeft()   -> Physical turn left to face South (0 / Realigned at Base)
@@ -132,8 +132,8 @@ local function runOutbound()
         moveForward()
     end
     
-    -- Move down 8 blocks (Y: 122 -> 114)
-    for i = 1, 8 do
+    -- Move down 9 blocks (Y: 122 -> 113)
+    for i = 1, 9 do
         moveDown()
     end
     
@@ -160,8 +160,8 @@ end
 local function runInbound()
     print("[Inbound] Returning to Base Storage...")
     
-    -- Move up 8 blocks (Y: 114 -> 122)
-    for i = 1, 8 do
+    -- Move up 9 blocks (Y: 113 -> 122)
+    for i = 1, 9 do
         moveUp()
     end
     
@@ -219,7 +219,7 @@ end
 -----------------------------------------------------------
 print("========================================")
 print(" Corrected Route Automated Hauler Active")
-print(" Base: (510, 122) | Target: (577, 114)")
+print(" Base: (510, 122) | Target: (577, 113)")
 print(" Behind: Storage Controller | Front: Overflow Chest")
 print("========================================")
 
