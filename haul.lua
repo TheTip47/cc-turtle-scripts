@@ -123,7 +123,7 @@ local function moveBack()
 end
 
 local function moveDown()
-    if not turtle.down() do
+    if not turtle.down() then
         checkFuel()
         safeDigDown()
         while not turtle.down() do
@@ -285,7 +285,7 @@ end
 -- Main Loop Execution
 -----------------------------------------------------------
 print("========================================")
-print(" Exact Route Automated Hauler Active")
+print(" Corrected Route Automated Hauler Active")
 print(" Base: (510, 122) | Target: (577, 113)")
 print(" Behind: Storage Controller | Front: Overflow Chest")
 print("========================================")
