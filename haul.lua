@@ -9,14 +9,14 @@
 --   Facing 1 = East (+X) [turnLeft from South]
 --   Facing 2 = North (-Z) [turnRight/Left x2]
 --   Facing 3 = West (-X) [turnRight from South]
--- Route Execution Sequence:
+-- Smart Chest Detection & Route Execution:
 --   1. turnLeft()    -> Physical turn left to face East (1 / +X)
 --   2. Move 67 blocks forward (X: 510 -> 577)
 --   3. Move 9 blocks down (Y: 122 -> 113)
---   4. turnRight()   -> Physical turn right to face South (0 / Miner Chest)
---   5. moveForward() -> Move 1 block forward to reach Miner Chest
---   6. Pull items via suck()
---   7. moveBack()    -> Move 1 block back under vertical shaft
+--   4. turnRight()   -> Physical turn right to face South (0 / Miner Chest direction)
+--   5. Inspect Front -> If chest is NOT directly adjacent, step forward 1 block.
+--   6. Pull items via suck() from Miner Chest
+--   7. Step back 1 block if forward step was taken.
 --   8. Move 9 blocks up (Y: 113 -> 122)
 --   9. turnRight()   -> Physical turn right to face West (3 / -X)
 --  10. Move 67 blocks forward (X: 577 -> 510)
@@ -26,6 +26,9 @@
 
 -- Coordinate & Direction State Tracking
 local pos = { x = 510, y = 122, z = 0, facing = 0 }
+
+-- Track if an extra forward step was taken to reach chest
+local tookExtraStep = false
 
 -----------------------------------------------------------
 -- Movement & Fuel Functions
@@ -143,6 +146,28 @@ local function moveUp()
 end
 
 -----------------------------------------------------------
+-- Chest Inspection Helper
+-----------------------------------------------------------
+local function isChestInFront()
+    -- Method 1: Peripheral inventory type check
+    local pType = peripheral.getType("front")
+    if pType then
+        return true
+    end
+    
+    -- Method 2: Block inspection data check
+    local hasBlock, data = turtle.inspect()
+    if hasBlock and type(data) == "table" and data.name then
+        local name = data.name:lower()
+        if name:find("chest") or name:find("barrel") or name:find("drawer") or name:find("storage") or name:find("shulker") then
+            return true
+        end
+    end
+    
+    return false
+end
+
+-----------------------------------------------------------
 -- Route Execution Functions
 -----------------------------------------------------------
 local function runOutbound()
@@ -164,8 +189,15 @@ local function runOutbound()
     -- Turn Right from East (1) to face South (0 / Miner Chest direction)
     turnRight()
     
-    -- Step forward 1 block to reach the Miner Chest
-    moveForward()
+    -- Check if chest is directly adjacent or 1 block away
+    if not isChestInFront() then
+        print("[Outbound] Stepping forward 1 block to reach chest...")
+        moveForward()
+        tookExtraStep = true
+    else
+        print("[Outbound] Chest detected directly in front!")
+        tookExtraStep = false
+    end
 end
 
 local function pullFromMinerChest()
@@ -187,8 +219,12 @@ end
 local function runInbound()
     print("[Inbound] Returning to Base Storage...")
     
-    -- Step back 1 block to position back under vertical shaft
-    moveBack()
+    -- If an extra step was taken forward to reach the chest, step back 1 block
+    if tookExtraStep then
+        print("[Inbound] Stepping back 1 block under shaft...")
+        moveBack()
+        tookExtraStep = false
+    end
     
     -- Move up 9 blocks (Y: 113 -> 122)
     for i = 1, 9 do
