@@ -3,10 +3,12 @@
 -- Setup: Place Turtle facing into the chunk.
 -- Drop-off Chest: Placed directly behind starting position (0,0,0)
 -- Wireless / Ender Modem: Equipped on side for telemetry
+-- Usage: dig [targetDepth] [protocolChannel]
 -- =========================================================
 
 local args = { ... }
 local targetDepth = tonumber(args[1]) or 64
+local protocolChannel = args[2] or "TURTLE_TELEMETRY"
 
 local STATE_FILE = "mining_state.txt"
 
@@ -117,7 +119,7 @@ local function sendTelemetry(status)
             deposited = itemsMined,
             status = currentStatus
         }
-        rednet.broadcast(payload, "TURTLE_TELEMETRY")
+        rednet.broadcast(payload, protocolChannel)
     end
 end
 
@@ -312,6 +314,7 @@ print("========================================")
 print(" 16x16 Chunk Miner with Telemetry")
 if activeModemSide then
     print(" Wireless Telemetry: ACTIVE (" .. activeModemSide .. ")")
+    print(" Channel: " .. protocolChannel)
 else
     print(" Wireless Telemetry: INACTIVE (No Modem)")
 end
@@ -382,6 +385,10 @@ for level = startLevel, targetDepth do
 end
 
 clearState()
+sendTelemetry("Mining Complete")
+print("\n========================================")
+print(" Chunk mining complete!")
+print("========================================")
 sendTelemetry("Mining Complete")
 print("\n========================================")
 print(" Chunk mining complete!")
