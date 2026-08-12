@@ -4,21 +4,21 @@
 --   Place Turtle at Base Origin (510, 122) facing South (Facing 0).
 --   Behind Turtle (North / Facing 2): Functional Storage Controller
 --   In Front of Turtle (South / Facing 0): Overflow Storage Chest
--- Route Direction Calibration:
---   - South = Facing 0 (+Z)
---   - East  = Facing 1 (+X) [turnRight from South]
---   - North = Facing 2 (-Z) [turnRight x2 from South]
---   - West  = Facing 3 (-X) [turnLeft from South]
+-- Cardinal Direction Mapping:
+--   Facing 0 = South (+Z)
+--   Facing 1 = East (+X) [turnLeft from South]
+--   Facing 2 = North (-Z) [turnRight/Left x2]
+--   Facing 3 = West (-X) [turnRight from South]
 -- Route Execution Steps:
---   1. turnRight()  -> Facing 1 (East / +X)
+--   1. turnLeft()   -> Facing East (1 / +X)
 --   2. Move 67 blocks forward (X: 510 -> 577)
 --   3. Move 8 blocks down (Y: 122 -> 114)
---   4. turnRight()  -> Facing 0 (South / Miner Chest)
+--   4. turnRight()  -> Facing South (0 / Miner Chest)
 --   5. Pull items via suck()
 --   6. Move 8 blocks up (Y: 114 -> 122)
---   7. turnLeft()   -> Facing 3 (West / -X)
+--   7. turnRight()  -> Facing West (3 / -X)
 --   8. Move 67 blocks forward (X: 577 -> 510)
---   9. turnLeft()   -> Facing 0 (South / Base Origin realigned)
+--   9. turnLeft()   -> Facing South (0 / Base Origin realigned)
 --  10. Offload to Storage Controller (North) & Overflow Chest (South)
 -- =========================================================
 
@@ -30,12 +30,12 @@ local pos = { x = 510, y = 122, z = 0, facing = 0 }
 -----------------------------------------------------------
 local function turnRight()
     turtle.turnRight()
-    pos.facing = (pos.facing + 1) % 4
+    pos.facing = (pos.facing + 3) % 4
 end
 
 local function turnLeft()
     turtle.turnLeft()
-    pos.facing = (pos.facing + 3) % 4
+    pos.facing = (pos.facing + 1) % 4
 end
 
 local function checkFuel()
@@ -124,8 +124,8 @@ end
 local function runOutbound()
     print("[Outbound] Navigating to Miner Chest...")
     
-    -- Turn Right from South (0) to East (1 / +X)
-    turnRight()
+    -- Turn Left from South (0) to East (1 / +X)
+    turnLeft()
     
     -- Move forward 67 blocks (X: 510 -> 577)
     for i = 1, 67 do
@@ -165,8 +165,8 @@ local function runInbound()
         moveUp()
     end
     
-    -- Turn Left from South (0) to West (3 / -X)
-    turnLeft()
+    -- Turn Right from South (0) to West (3 / -X)
+    turnRight()
     
     -- Move forward 67 blocks back to X=510 (X: 577 -> 510)
     for i = 1, 67 do
@@ -237,5 +237,7 @@ while true do
     else
         print("[Status] Miner Chest empty. Standing by at Base for 10s...")
         sleep(10)
+    end
+end
     end
 end
