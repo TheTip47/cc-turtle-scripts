@@ -10,16 +10,18 @@
 --   Facing 2 = North (-Z) [turnRight/Left x2]
 --   Facing 3 = West (-X) [turnRight from South]
 -- Route Execution Sequence:
---   1. turnLeft()   -> Physical turn left to face East (1 / +X)
+--   1. turnLeft()    -> Physical turn left to face East (1 / +X)
 --   2. Move 67 blocks forward (X: 510 -> 577)
 --   3. Move 9 blocks down (Y: 122 -> 113)
---   4. turnRight()  -> Physical turn right to face South (0 / Miner Chest)
---   5. Pull items via suck()
---   6. Move 9 blocks up (Y: 113 -> 122)
---   7. turnRight()  -> Physical turn right to face West (3 / -X)
---   8. Move 67 blocks forward (X: 577 -> 510)
---   9. turnLeft()   -> Physical turn left to face South (0 / Realigned at Base)
---  10. Offload to Storage Controller (North) & Overflow Chest (South)
+--   4. turnRight()   -> Physical turn right to face South (0 / Miner Chest)
+--   5. moveForward() -> Move 1 block forward to reach Miner Chest
+--   6. Pull items via suck()
+--   7. moveBack()    -> Move 1 block back under vertical shaft
+--   8. Move 9 blocks up (Y: 113 -> 122)
+--   9. turnRight()   -> Physical turn right to face West (3 / -X)
+--  10. Move 67 blocks forward (X: 577 -> 510)
+--  11. turnLeft()    -> Physical turn left to face South (0 / Realigned at Base)
+--  12. Offload to Storage Controller (North) & Overflow Chest (South)
 -- =========================================================
 
 -- Coordinate & Direction State Tracking
@@ -96,6 +98,28 @@ local function moveForward()
     end
 end
 
+local function moveBack()
+    checkFuel()
+    while not turtle.back() do
+        turnRight()
+        turnRight()
+        safeDig()
+        turtle.attack()
+        turnRight()
+        turnRight()
+        sleep(0.4)
+    end
+    if pos.facing == 0 then
+        pos.z = pos.z - 1
+    elseif pos.facing == 1 then
+        pos.x = pos.x - 1
+    elseif pos.facing == 2 then
+        pos.z = pos.z + 1
+    elseif pos.facing == 3 then
+        pos.x = pos.x + 1
+    end
+end
+
 local function moveDown()
     checkFuel()
     safeDigDown()
@@ -137,8 +161,11 @@ local function runOutbound()
         moveDown()
     end
     
-    -- Turn Right from East (1) to face South (0 / Miner Chest)
+    -- Turn Right from East (1) to face South (0 / Miner Chest direction)
     turnRight()
+    
+    -- Step forward 1 block to reach the Miner Chest
+    moveForward()
 end
 
 local function pullFromMinerChest()
@@ -159,6 +186,9 @@ end
 
 local function runInbound()
     print("[Inbound] Returning to Base Storage...")
+    
+    -- Step back 1 block to position back under vertical shaft
+    moveBack()
     
     -- Move up 9 blocks (Y: 113 -> 122)
     for i = 1, 9 do
@@ -218,7 +248,7 @@ end
 -- Main Loop Execution
 -----------------------------------------------------------
 print("========================================")
-print(" Corrected Route Automated Hauler Active")
+print(" Exact Route Automated Hauler Active")
 print(" Base: (510, 122) | Target: (577, 113)")
 print(" Behind: Storage Controller | Front: Overflow Chest")
 print("========================================")
