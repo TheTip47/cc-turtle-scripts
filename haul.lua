@@ -136,7 +136,7 @@ local function moveDown()
 end
 
 local function moveUp()
-    if not turtle.up() do
+    if not turtle.up() then
         checkFuel()
         safeDigUp()
         while not turtle.up() do
